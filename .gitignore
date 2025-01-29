@@ -1,0 +1,8 @@
+dev/
+env/
+dist/
+*/*/__pycahe__
+*.pyc
+*.egg-info
+test.py
+jwt_token
