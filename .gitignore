@@ -6,3 +6,4 @@ dist/
 *.egg-info
 test.py
 jwt_token
+*/*/.DS_Store
