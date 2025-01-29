@@ -63,10 +63,11 @@ class EmiasClient:
         """
         Получение информации о специализациях.
         """
+        method = MethodsEmc.GET_SPECIALITIES_INFO
         return self._send_post_request(
-            method=MethodsEmc.GET_SPECIALITIES_INFO.value.strip("/?"),
-            url= EmiasURLs.emc_api_build_url(
-                MethodsEmc.GET_SPECIALITIES_INFO
+            method = method.value.strip("/?"),
+            url = EmiasURLs.emc_api_build_url(
+                method
             )
         )
 
@@ -83,10 +84,11 @@ class EmiasClient:
         :return: 
         :rtype: dict
         """
+        method = MethodsEmc.GET_DOCTORS_INFO
         return self._send_post_request(
-            method= MethodsEmc.GET_DOCTORS_INFO.value.strip("/?"),
+            method= method.value.strip("/?"),
             url= EmiasURLs.emc_api_build_url(
-                MethodsEmc.GET_DOCTORS_INFO
+                method
             ),
             additional_params= {
                 "specialityId": speciality_id
@@ -106,16 +108,59 @@ class EmiasClient:
         :param available_resource_id: Идентификатор врача.
         :param complex_resource_id: Идентификатор поликлиники.
         """
+        method = MethodsEmc.GET_AVAILABLE_RESOURCE_SCHEDULE_INFO
         return self._send_post_request(
-            method= MethodsEmc.GET_AVAILABLE_RESOURCE_SCHEDULE_INFO.value.strip("/?"),
+            method= method.value.strip("/?"),
             url= EmiasURLs.emc_api_build_url(
-                MethodsEmc.GET_AVAILABLE_RESOURCE_SCHEDULE_INFO
+                method
             ),
             additional_params={
                 "specialityId": speciality_id,
                 "availableResourceId": available_resource_id,
                 "complexResourceId": complex_resource_id
             }
+        )
+    
+    def get_appointment_receptions_by_patient(self) -> list[dict]:
+        """ Получение действующих записей на прием к врачам """
+        method = MethodsEmc.GET_APPOINTMENT_RECEPTIONS_BY_PATIENT
+        return self._send_post_request(
+            method.value.strip("/?"),
+            url= EmiasURLs.emc_api_build_url(
+                method
+            )
+        )
+
+    def get_digital_prescription(self) -> list[dict] | dict:
+        """ Получение рецептов """ 
+        method = MethodsEmc.DIGITAL_PRESCRIPTION
+        return self._send_post_request(
+            method.value.strip("/?"),
+            url= EmiasURLs.emc_api_build_url(
+                method
+            )
+        )
+
+    # ???
+    def get_referrals_info(self):
+        """ """
+        method = MethodsEmc.GET_REFERRALS_INFO
+        return self._send_post_request(
+            method.value.strip("/?"),
+            url= EmiasURLs.emc_api_build_url(
+                method
+            )
+        )
+    
+    # ???
+    def get_assignments_info(self):
+        """ """
+        method = MethodsEmc.GET_ASSIGNMENTS_INFO
+        return self._send_post_request(
+            method.value.strip("/?"),
+            EmiasURLs.emc_api_build_url(
+                method
+            )
         )
 
     def __enter__(self):
