@@ -1,7 +1,4 @@
-from nanoid import generate
-
 from .session_manager import SessionManager
-from .request_builder import RequestBuilder
 from .enums.emias_urls import EmiasURLs, MethodsEmc
 from .models.auth_model import AuthPolicyData
 from .models.emc_response_model import (
@@ -16,48 +13,17 @@ class EmiasClient:
         self.__policy_number = auth_data.policy_number
         self.__birth_date = auth_data.birth_date
         self.jwt_token = auth_data.jwt
-        self.jsonrpc = "2.0"
-        self.nano_id = generate()
         self.session_manager = SessionManager()
-        self.session = None
 
     def initialize(self):
         """
         Инициализация сессии.
         """
-        self.session = self.session_manager.init_session(
-            self.nano_id, 
-            self.jwt_token
-        )
+        session = self.session_manager.init_session(self.jwt_token)
         if self.jwt_token is None:
-            self.jwt_token = self.session.headers.get("jwt")
+            self.jwt_token = session.headers.get("jwt")
         return self
 
-    def _send_post_request(
-            self, 
-            method: str, 
-            url: str, 
-            additional_params: dict = None
-        ) -> dict:
-        """
-        Единая функция для отправки POST-запросов.
-
-        :param method: Название метода API.
-        :param url: URL-адрес для отправки запроса.
-        :param additional_params: Дополнительные параметры для JSON.
-        :return: Данные ответа в виде словаря.
-        """
-        data = RequestBuilder.generate(
-            method, 
-            self.jsonrpc,
-            self.nano_id, 
-            str(self.__birth_date), 
-            self.__policy_number,
-            additional_params
-        )
-        # Добавить try ...
-        response = self.session.post(url=url, json=data)
-        return self.session_manager.process_response(response)
 
     def get_specialities_info(
             self, 
@@ -71,11 +37,14 @@ class EmiasClient:
         :return: Список объектов SpecialitiesResponse или список словарей.
         """
         method = MethodsEmc.GET_SPECIALITIES_INFO
-        response = self._send_post_request(
-            method = method.value.strip("/?"),
-            url = EmiasURLs.emc_api_build_url(
+        response = self.session_manager.send_post_request(
+            method.value.strip("/?"),
+            EmiasURLs.emc_api_build_url(
                 method
-            )
+            ),
+            self.__policy_number,
+            self.__birth_date
+
         )
         if as_dict:
             return response
@@ -95,14 +64,14 @@ class EmiasClient:
         :rtype: dict
         """
         method = MethodsEmc.GET_DOCTORS_INFO
-        return self._send_post_request(
-            method= method.value.strip("/?"),
-            url= EmiasURLs.emc_api_build_url(
+        return self.session_manager.send_post_request(
+            method.value.strip("/?"),
+            EmiasURLs.emc_api_build_url(
                 method
             ),
-            additional_params= {
-                "specialityId": speciality_id
-            }
+            self.__policy_number,
+            self.__birth_date,
+            {"specialityId": speciality_id}
         )
 
     def get_available_resource_schedule_info(
@@ -119,12 +88,14 @@ class EmiasClient:
         :param complex_resource_id: Идентификатор поликлиники.
         """
         method = MethodsEmc.GET_AVAILABLE_RESOURCE_SCHEDULE_INFO
-        return self._send_post_request(
-            method= method.value.strip("/?"),
-            url= EmiasURLs.emc_api_build_url(
+        return self.session_manager.send_post_request(
+            method.value.strip("/?"),
+            EmiasURLs.emc_api_build_url(
                 method
             ),
-            additional_params={
+            self.__policy_number,
+            self.__birth_date,
+            {
                 "specialityId": speciality_id,
                 "availableResourceId": available_resource_id,
                 "complexResourceId": complex_resource_id
@@ -134,43 +105,51 @@ class EmiasClient:
     def get_appointment_receptions_by_patient(self) -> list[dict]:
         """ Получение действующих записей на прием к врачам """
         method = MethodsEmc.GET_APPOINTMENT_RECEPTIONS_BY_PATIENT
-        return self._send_post_request(
+        return self.session_manager.send_post_request(
             method.value.strip("/?"),
-            url= EmiasURLs.emc_api_build_url(
+            EmiasURLs.emc_api_build_url(
                 method
-            )
+            ),
+            self.__policy_number,
+            self.__birth_date
         )
 
     def get_digital_prescription(self) -> list[dict] | dict:
         """ Получение рецептов """ 
         method = MethodsEmc.DIGITAL_PRESCRIPTION
-        return self._send_post_request(
+        return self.session_manager.send_post_request(
             method.value.strip("/?"),
-            url= EmiasURLs.emc_api_build_url(
+            EmiasURLs.emc_api_build_url(
                 method
-            )
+            ),
+            self.__policy_number,
+            self.__birth_date
         )
 
     # ???
     def get_referrals_info(self):
         """ """
         method = MethodsEmc.GET_REFERRALS_INFO
-        return self._send_post_request(
+        return self.session_manager.send_post_request(
             method.value.strip("/?"),
-            url= EmiasURLs.emc_api_build_url(
+            EmiasURLs.emc_api_build_url(
                 method
-            )
+            ),
+            self.__policy_number,
+            self.__birth_date
         )
     
     # ???
     def get_assignments_info(self):
         """ """
         method = MethodsEmc.GET_ASSIGNMENTS_INFO
-        return self._send_post_request(
+        return self.session_manager.send_post_request(
             method.value.strip("/?"),
             EmiasURLs.emc_api_build_url(
                 method
-            )
+            ),
+            self.__policy_number,
+            self.__birth_date
         )
 
     def __enter__(self):
@@ -178,8 +157,7 @@ class EmiasClient:
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
-            if self.session:
-                self.session.close()
+            self.session_manager.close_session()
         finally:
             if exc_type:
                 print(f"Error: {exc_value}")
