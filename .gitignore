@@ -7,3 +7,5 @@ dist/
 test.py
 jwt_token
 */*/.DS_Store
+requirements_dev.txt
+.pytest_cache

@@ -23,6 +23,7 @@ requires = [
     "requests==2.32.3",
     "soupsieve==2.6",
     "urllib3==2.3.0",
+    "pydantic==2.10.6",
 ]
 
 setup(

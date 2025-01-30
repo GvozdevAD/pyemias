@@ -24,16 +24,22 @@ pip install .
 Простой пример использования библиотеки:
 
 ```python
-from datetime import datetime
-from pyemias import EmiasClient
 from pprint import pprint
+from pyemias import (
+    EmiasClient, 
+    AuthPolicyData
+)
+
+
+# Данные для авторизации
+policy_data = {
+    "policy_number": "0000000000000000", # Номер полиса из 16 символов
+    "birth_date": "1900-01-01"           # Дата рождения в формате YYYY-MM-DD
+}
+auth_policy_data = AuthPolicyData(**policy_data)
 
 # Создание экземпляра клиента
-client = EmiasClient(
-    policy_number="0000000000000000", 
-    birth_date=datetime(1900, 1, 1),
-    jwt_token="your_jwt_token"  # Опционально
-)
+client = EmiasClient(auth_policy_data)
 # Инициализация сессии
 client.initialize()
 
@@ -55,17 +61,22 @@ pprint(doctors_info)
 Библиотека поддерживает работу через контекстный менеджер для автоматического управления сессией:
 
 ```python
-from datetime import datetime
 from pprint import pprint
-from pyemias import EmiasClient
+from pyemias import (
+    EmiasClient,
+    AuthPolicyData
+)
 
 
-policy_number = "0000000000000000"
-birth_date = datetime(1900, 1, 1)
-with open("jwt_token", "r", encoding="utf-8") as file:
-    jwt = file.read()
+# Данные для авторизации
+policy_data = {
+    "policy_number": "0000000000000000", # Номер полиса из 16 символов
+    "birth_date": "1900-01-01",          # Дата рождения в формате YYYY-MM-DD
+    "jwt": "cdkew.cmkdas.caskdc"         # (Необязательно) Сохранённый JWT токен
+}
+auth_policy_data = AuthPolicyData(**policy_data)
 
-with EmiasClient(policy_number, birth_date, jwt) as client:
+with EmiasClient(auth_policy_data) as client:
     # Получение информации о специализациях
     specialities_info = client.get_specialities_info()
     pprint(specialities_info)
@@ -75,13 +86,24 @@ with EmiasClient(policy_number, birth_date, jwt) as client:
     pprint(doctors_info)
     
 ```
-
+#### Примечания:
+* Контекстный менеджер автоматически завершает сессию по окончании работы. Это особенно полезно для обработки исключений или при большом количестве запросов.
+* Функция initialize требуется только при ручной инициализации клиента.
+* JWT-токен необходимо сохранять, если вы планируете повторно использовать клиент в течение 7 дней без повторной авторизации.
 
 ## Методы
 
-### `EmiasClient.get_specialities_info()`
+### `EmiasClient.get_specialities_info(as_dict: bool = False) -> (list[SpecialitiesResponse] | list[dict])`
 Возвращает список специализаций, доступных для записи через портал EMIAS.
-* Возвращаемый тип: `list[dict]`
+
+* Параметры:
+    * as_dict (bool): Определяет формат возвращаемых данных.
+        * Если True, возвращает список словарей (list[dict]).
+        * Если False, возвращает список объектов SpecialitiesResponse.
+
+* Возвращаемый тип:
+    * list[SpecialitiesResponse] — по умолчанию.
+    * list[dict] — если указан параметр as_dict=True.
 
 ### `EmiasClient.get_doctors_info(speciality_id: int)`
 Возвращает информацию о врачах для указанной специальности.

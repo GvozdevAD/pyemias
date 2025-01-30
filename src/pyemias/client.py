@@ -1,21 +1,21 @@
-from datetime import datetime
 from nanoid import generate
 
 from .session_manager import SessionManager
 from .request_builder import RequestBuilder
 from .enums.emias_urls import EmiasURLs, MethodsEmc
-
+from .models.auth_model import AuthPolicyData
+from .models.emc_response_model import (
+    SpecialitiesResponse
+)
 
 class EmiasClient:
     def __init__(
         self, 
-        policy_number: str, 
-        birth_date: datetime, 
-        jwt_token: str = None
+        auth_data: AuthPolicyData
     ) -> None:
-        self.__policy_number = policy_number
-        self.__birth_date = birth_date.date()
-        self.jwt_token = jwt_token
+        self.__policy_number = auth_data.policy_number
+        self.__birth_date = auth_data.birth_date
+        self.jwt_token = auth_data.jwt
         self.jsonrpc = "2.0"
         self.nano_id = generate()
         self.session_manager = SessionManager()
@@ -59,17 +59,27 @@ class EmiasClient:
         response = self.session.post(url=url, json=data)
         return self.session_manager.process_response(response)
 
-    def get_specialities_info(self) -> list[dict]:
+    def get_specialities_info(
+            self, 
+            as_dict: bool = False
+    ) -> list[SpecialitiesResponse] | list[dict]:
         """
         Получение информации о специализациях.
+        
+        :param as_dict: Если True, возвращает необработанные данные (список словарей).
+                    Если False, возвращает список объектов SpecialitiesResponse.
+        :return: Список объектов SpecialitiesResponse или список словарей.
         """
         method = MethodsEmc.GET_SPECIALITIES_INFO
-        return self._send_post_request(
+        response = self._send_post_request(
             method = method.value.strip("/?"),
             url = EmiasURLs.emc_api_build_url(
                 method
             )
         )
+        if as_dict:
+            return response
+        return [SpecialitiesResponse(**row) for row in response]
 
     def get_doctors_info(
             self, 
