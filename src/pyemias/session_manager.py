@@ -44,14 +44,14 @@ class SessionManager:
         """
         self.session = requests.Session()
         csrf_token = self.get_csrf_token()
-        self.session.headers.update({
+        self.session.cookies.update({
             "csrf-token-name": "csrftoken",
             "csrf-token-value": csrf_token,
         })
         if jwt_token is None:
             jwt_token = self.create_anonymous_jwt(self.nano_id)
-        self.session.headers.update({"jwt": jwt_token})
-        
+        self.session.cookies.update({"jwt": jwt_token})
+
         return self.session
 
     def get_csrf_token(self) -> str:
